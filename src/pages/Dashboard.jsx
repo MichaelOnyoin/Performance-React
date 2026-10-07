@@ -1,7 +1,28 @@
-import{useState}from'react';import{api}from'../api';
-import{BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from'recharts';
+import{useEffect,useState}from'react';import{api}from'../api';
+import{BarChart,Bar,LineChart,Line,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from'recharts';
 export default function Dashboard(){
-    const[month,setMonth]=useState(new Date().toISOString().slice(0,7)+'-01'),[data,setData]=useState(null),[error,setError]=useState('');
+    const[month,setMonth]=useState(new Date().toISOString().slice(0,7)+'-01'),[data,setData]=useState(null),[employees,setEmployees]=useState([]),[employeeId,setEmployeeId]=useState(''),[trend,setTrend]=useState(null),[error,setError]=useState('');
+    useEffect(()=>
+    {
+        api('/api/employees').then(result=>
+        {
+            setEmployees(result);
+            if(result.length)setEmployeeId(String(result[0].id));
+        }).catch(e=>setError(e.message));
+    },[]);
+    useEffect(()=>
+    {
+        if(!employeeId){setTrend(null);return;}
+        let active=true;
+        api(`/api/dashboard/employee-trend?employee_id=${employeeId}&year=${month.slice(0,4)}`).then(result=>
+        {
+            if(active)setTrend(result);
+        }).catch(e=>
+        {
+            if(active)setError(e.message);
+        });
+        return()=>{active=false};
+    },[employeeId,month]);
     async function load()
     {
         try
@@ -37,13 +58,27 @@ export default function Dashboard(){
                 </div>
             </div>
             <div className="panel">
-                <h2>Team average scores</h2>
+                <h2>Employee monthly scores</h2>
                 <ResponsiveContainer width="100%" height={300}>
-                    {/* <BarChart data={data.teams}><CartesianGrid strokeDasharray="3 3"/> */}
-                    <BarChart data={data.teams}><CartesianGrid strokeDasharray="3 3"/>
-                    <XAxis dataKey="team"/><YAxis/><Tooltip/>
-                    <Bar dataKey="average_score" fill="#003b70"/></BarChart>
+                    <BarChart data={data.employees}><CartesianGrid strokeDasharray="3 3"/>
+                    <XAxis dataKey="employee"/><YAxis/><Tooltip/>
+                    <Bar dataKey="sum_actual" fill="#003b70"/></BarChart>
                 </ResponsiveContainer>
+            </div>
+            <div className="panel">
+                <h2>Employee actual trend</h2>
+                <div className="actions">
+                    <label>Employee
+                        <select value={employeeId} onChange={e=>setEmployeeId(e.target.value)}>
+                            {employees.map(employee=><option key={employee.id} value={employee.id}>{employee.name} (ID {employee.id})</option>)}
+                        </select>
+                    </label>
+                </div>
+                {trend&&<ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={trend.points}><CartesianGrid strokeDasharray="3 3"/>
+                    <XAxis dataKey="month" tickFormatter={value=>new Date(`${value}T00:00:00`).toLocaleString(undefined,{month:'short'})}/><YAxis/><Tooltip labelFormatter={value=>new Date(`${value}T00:00:00`).toLocaleString(undefined,{month:'long',year:'numeric'})} formatter={value=>[value,'Actual sum']}/>
+                    <Line type="linear" dataKey="sum_actual" stroke="#003b70" strokeWidth={3} dot={{r:4}}/></LineChart>
+                </ResponsiveContainer>}
             </div>
             <div className="panel">
                 <h2>Employee ranking</h2>
@@ -53,16 +88,16 @@ export default function Dashboard(){
                             <th>Employee</th>
                             <th>Team</th>
                             <th>Total score</th>
-                            <th>Sum</th>
+                            <th>% score</th>
                         </tr>
                     </thead>
                     <tbody>
                         {[...data.employees].sort((a,b)=>b.total_score-a.total_score).map(x=>
-                        <tr key={x.employee}>
+                        <tr key={x.employee_id}>
                             <td>{x.employee}</td>
                             <td>{x.team}</td>
                             <td>{x.total_score.toFixed(3)}</td>
-                            {/* <td>{s.total_score}</td> */}
+                            <td>{x.sum_actual.toFixed(1)} %</td>
                         </tr>
                         )}
                     </tbody>

@@ -4,7 +4,7 @@ import{login}from'../api';
 
 export default function Login()
 {
-    const[email,setEmail]=useState('admin@hlb.local'),
+    const[email,setEmail]=useState(''),
     [password,setPassword]=useState(''),
     [error,setError]=useState(''),
     nav=useNavigate();
@@ -15,7 +15,8 @@ export default function Login()
         {
             const x=await login(email,password);
             localStorage.setItem('token',x.access_token);
-            nav('/dashboard')
+            const me=await (await fetch(`${import.meta.env.VITE_API_URL||'http://127.0.0.1:8000'}/api/auth/me`,{headers:{Authorization:`Bearer ${x.access_token}`} })).json();
+            nav(me.role==='Employee'?'/profile':'/dashboard')
         }catch(e){
             setError(e.message)
         }
@@ -30,6 +31,7 @@ export default function Login()
             <label>Email<input value={email} onChange={e=>setEmail(e.target.value)} type="email" required/></label>
             <label>Password<input value={password} onChange={e=>setPassword(e.target.value)} type="password" required/></label>
             <button>Sign in</button>
+            <p className="auth-switch">New employee? <a href="/signup">Create an account</a></p>
         </form>
         </div>
     }

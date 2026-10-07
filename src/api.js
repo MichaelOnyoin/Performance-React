@@ -27,3 +27,12 @@ export async function login(email,password)
     if(!res.ok)throw new Error('Incorrect email or password');
     return res.json()
 }
+export async function signup(full_name,email,password)
+{
+    const res=await fetch(`${BASE}/api/auth/signup`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({full_name,email,password})
+    });
+    if(!res.ok){let detail='Could not create account';try{detail=(await res.json()).detail||detail}catch{}throw new Error(detail)}
+    return res.json()
+}
