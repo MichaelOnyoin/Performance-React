@@ -18,33 +18,67 @@ export default function Admin(){
     return <section>
         <h1>Administration</h1><p>Generate monthly KPI records, manage shared definitions, and assign individual targets.</p>
         {error&&<div className="error">{error}</div>}{msg&&<div className="notice">{msg}</div>}
-        <div className="panel admin-generator"><div><h2>Generate monthly entries</h2><p>Creates entries for each employee’s active KPI assignments.</p></div><label>Month<input type="date" value={month} onChange={e=>setMonth(e.target.value)}/></label><button onClick={generate}>Generate monthly KPIs</button></div>
+        <div className="panel admin-generator">
+        <div>
+        <h2>Generate monthly entries</h2>
+        <p>Creates entries for each employee’s active KPI assignments.</p>
+        </div><label>Month<input type="date" value={month} onChange={e=>setMonth(e.target.value)}/></label><button onClick={generate}>Generate monthly KPIs</button></div>
         {role==='Admin'&&<div className="panel kpi-admin-panel">
-            <div className="pagehead"><div><h2>KPI definitions</h2><p>Maintain shared descriptions and weights. The default target is used when first assigning a KPI to an employee.</p></div><span className="kpi-count">{kpis.length} KPIs</span></div>
+            <div className="pagehead"><div><h2>KPI definitions</h2>
+            <p>Maintain shared descriptions and weights. The default target is used when first assigning a KPI to an employee.</p>
+            </div>
+            <span className="kpi-count">{kpis.length} KPIs</span></div>
             <form className="add-kpi-form" onSubmit={createKpi}>
                 <div className="add-kpi-copy"><strong>Add a KPI definition</strong><span>New KPIs are shared catalog items. Assign each one to employees below and set their individual targets.</span></div>
                 <label>KPI code<input required maxLength={50} value={newKpi.code} onChange={e=>changeNewKpi('code',e.target.value)} placeholder="e.g. KPI-12"/></label>
                 <label>KPI name / description<input required maxLength={500} value={newKpi.name} onChange={e=>changeNewKpi('name',e.target.value)} placeholder="Describe the KPI"/></label>
                 <label>Perspective<input required maxLength={255} value={newKpi.perspective} onChange={e=>changeNewKpi('perspective',e.target.value)} placeholder="e.g. Client"/></label>
-                <label>Perspective weight<input required type="number" min="0" step="any" value={newKpi.perspective_weight} onChange={e=>changeNewKpi('perspective_weight',e.target.value)}/></label>
                 <label>KPI weight<input required type="number" min="0" step="any" value={newKpi.kpi_weight} onChange={e=>changeNewKpi('kpi_weight',e.target.value)}/></label>
+                <label>Perspective weight<input required type="number" min="0" step="any" value={newKpi.perspective_weight} onChange={e=>changeNewKpi('perspective_weight',e.target.value)}/></label>
                 <label>Default target<input required type="number" min="0" step="any" value={newKpi.target} onChange={e=>changeNewKpi('target',e.target.value)}/></label>
                 <label>Unit / notes<input maxLength={255} value={newKpi.unit_notes} onChange={e=>changeNewKpi('unit_notes',e.target.value)} placeholder="Optional"/></label>
                 <button type="submit" disabled={creatingKpi}>{creatingKpi?'Adding…':'Add KPI'}</button>
             </form>
             {loading?<p>Loading KPI definitions…</p>:kpis.length===0?<p>No KPI definitions found.</p>:
-                <div className="tablewrap kpi-table-wrap"><table className="kpi-admin-table"><thead><tr><th>KPI ID</th><th>KPI name / description</th><th>Perspective</th><th>Perspective weight</th><th>KPI weight</th><th>Default target</th><th>Unit / notes</th><th>Action</th></tr></thead>
-                <tbody>{kpis.map(kpi=>editing?.id===kpi.id?<tr key={kpi.id} className="kpi-edit-row">
+            <div className="tablewrap kpi-table-wrap">
+                <table className="kpi-admin-table">
+                    <thead>
+                      <tr>
+                        <th>KPI ID</th>
+                        <th>KPI name / description</th>
+                        <th>Perspective</th>
+                        <th>KPI weight</th>
+                        <th>Perspective weight</th>
+                        <th>Default target</th>
+                        <th>Unit / notes</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                <tbody>
+                    {kpis.map(kpi=>editing?.id===kpi.id?
+                <tr key={kpi.id} className="kpi-edit-row">
                     <td>{kpi.code}</td><td><input aria-label="KPI name or description" value={editing.name} maxLength={500} onChange={e=>change('name',e.target.value)}/></td>
                     <td><input aria-label="Perspective" value={editing.perspective} maxLength={255} onChange={e=>change('perspective',e.target.value)}/></td>
-                    <td><input aria-label="Perspective weight" type="number" min="0" step="any" value={editing.perspective_weight} onChange={e=>change('perspective_weight',e.target.value)}/></td>
                     <td><input aria-label="KPI weight" type="number" min="0" step="any" value={editing.kpi_weight} onChange={e=>change('kpi_weight',e.target.value)}/></td>
+
+                    <td><input aria-label="Perspective weight" type="number" min="0" step="any" value={editing.perspective_weight} onChange={e=>change('perspective_weight',e.target.value)}/></td>
                     <td><input aria-label="Target" type="number" step="any" value={editing.target} onChange={e=>change('target',e.target.value)}/></td>
                     <td><input aria-label="Unit or notes" value={editing.unit_notes||''} maxLength={255} onChange={e=>change('unit_notes',e.target.value)}/></td>
                     <td className="kpi-actions"><button disabled={saving} onClick={saveKpi}>{saving?'Saving…':'Save'}</button><button className="secondary" disabled={saving} onClick={()=>setEditing(null)}>Cancel</button></td>
-                </tr>:<tr key={kpi.id}>
-                    <td>{kpi.code}</td><td className="kpi-description">{kpi.name}</td><td>{kpi.perspective}</td><td>{kpi.perspective_weight}</td><td>{kpi.kpi_weight}</td><td>{kpi.target}</td><td>{kpi.unit_notes||'—'}</td><td><button className="secondary" onClick={()=>beginEdit(kpi)}>Edit</button></td>
-                </tr>)}</tbody></table></div>
+                </tr>:
+                <tr key={kpi.id}>
+                    <td>{kpi.code}</td>
+                    <td className="kpi-description">{kpi.name}</td>
+                    <td>{kpi.perspective}</td>
+                    <td>{kpi.kpi_weight}</td>
+                    <td>{kpi.perspective_weight}</td>
+                    <td>{kpi.target}</td>
+                    <td>{kpi.unit_notes||'—'}</td>
+                    <td><button className="secondary" onClick={()=>beginEdit(kpi)}>Edit</button></td>
+                </tr>)}
+                </tbody>
+                </table>
+            </div>
             }
         </div>}
         {role==='Admin'&&<div className="panel assignment-panel">

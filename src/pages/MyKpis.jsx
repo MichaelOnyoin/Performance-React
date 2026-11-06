@@ -60,11 +60,12 @@ export default function MyKpis(){
                              <>Score is calculated when you save an actual.</>}</div>
                         {editable&&<div className="actions"><button className="secondary" disabled={isBusy||bulkSubmitting} onClick={()=>save(row)}>{isBusy?'Saving…':'Save draft'}</button><button disabled={isBusy||bulkSubmitting||row.actual===''||row.actual==null} onClick={()=>submit(row)}>Submit for review</button></div>}
                     </div>
-                    {row.status==='Rejected'&&row.supervisor_comments&&<div className="review-note"><b>Reviewer feedback</b><p>{row.supervisor_comments}</p></div>}
+                    {row.supervisor_comments&&<div className="review-note"><b>Supervisor feedback</b><p>{row.supervisor_comments}</p></div>}
+                    {row.partner_comments&&<div className="review-note"><b>Partner feedback</b><p>{row.partner_comments}</p></div>}
                 </article>
             })}</div>
         }
-        {!loading&&rows.length>0&&<div className="my-kpi-bulk-submit"><div><b>Submit all KPI entries for this month</b><p>{editableRows.length?`${editableRows.length} draft or rejected entries will be sent to your reviewer together.`:'There are no draft or rejected entries to submit.'}</p>{editableRows.length>0&&!bulkReady&&<small>Enter an actual for every editable KPI to enable submission.</small>}</div><button disabled={!bulkReady||bulkSubmitting||busy!==null} onClick={submitAll}>{bulkSubmitting?'Submitting…':`Submit all ${editableRows.length} for review`}</button></div>}
+        {!loading&&rows.length>0&&<div className="my-kpi-bulk-submit"><div><b>Submit all KPI entries for this month</b><p>{editableRows.length?`${editableRows.length} draft or rejected entries will be sent to your assigned Supervisor, then to a Partner for final approval.`:'There are no draft or rejected entries to submit.'}</p>{editableRows.length>0&&!bulkReady&&<small>Enter an actual for every editable KPI to enable submission.</small>}</div><button disabled={!bulkReady||bulkSubmitting||busy!==null} onClick={submitAll}>{bulkSubmitting?'Submitting…':`Submit all ${editableRows.length} for review`}</button></div>}
         {!loading&&rows.length>0&&<div className="monthly-score-total"><span>Sum of scores for this month</span><b>{totalScore.toFixed(2)}</b></div>}
     </section>
 }

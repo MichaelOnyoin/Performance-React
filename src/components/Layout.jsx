@@ -43,11 +43,12 @@ export default function Layout(){
         </header>
         <div className={`shell${collapsed?' sidebar-collapsed':''}${mobileOpen?' mobile-nav-open':''}`}>
             <aside aria-label="Main navigation">
-                {user?.role==='Employee'?<>
+                {user&&<>
                     <SideLink to="/profile" icon="profile" onClick={closeMobile}>My Profile</SideLink>
                     <SideLink to="/my-kpis" icon="kpis" onClick={closeMobile}>My KPI actuals</SideLink>
-                </>:<SideLink to="/dashboard" icon="dashboard" onClick={closeMobile}>Partner Dashboard</SideLink>}
-                {user?.role!=='Employee'&&<>
+                </>}
+                {user&&user.role!=='Employee'&&<>
+                    {(user.role==='Admin'||user.role==='Partner'||user.role==='Manager')&&<SideLink to="/dashboard" icon="dashboard" onClick={closeMobile}>Partner Dashboard</SideLink>}
                     <SideLink to="/entries" icon="entries" onClick={closeMobile}>KPI Entries</SideLink>
                     <SideLink to="/employees" icon="employees" onClick={closeMobile}>Employees</SideLink>
                     {user?.role==='Admin'&&<SideLink to="/users" icon="users" onClick={closeMobile}>Users</SideLink>}

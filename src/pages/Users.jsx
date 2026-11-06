@@ -1,7 +1,7 @@
 import{useEffect,useState}from'react';
 import{api}from'../api';
 
-const roleOptions=['Admin','Partner','Employee'];
+const roleOptions=['Admin','Partner','Employee','Supervisor','Manager'];
 
 export default function Users(){
     const[users,setUsers]=useState([]),[currentUserId,setCurrentUserId]=useState(null),[draftRoles,setDraftRoles]=useState({}),[savingUser,setSavingUser]=useState(null),[deletingUser,setDeletingUser]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState(''),[isAdmin,setIsAdmin]=useState(false);

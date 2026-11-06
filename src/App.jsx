@@ -15,7 +15,7 @@ import ForgotPassword from'./pages/ForgotPassword';
 import ResetPassword from'./pages/ResetPassword';
 
 const Guard=({children})=>localStorage.getItem('token')?children:<Navigate to="/login" replace/>;
-function Home(){const[route,setRoute]=useState('');useEffect(()=>{api('/api/auth/me').then(user=>setRoute(user.role==='Employee'?'/profile':'/dashboard')).catch(()=>setRoute('/login'))},[]);return route?<Navigate to={route} replace/>:null}
+function Home(){const[route,setRoute]=useState('');useEffect(()=>{api('/api/auth/me').then(user=>setRoute(user.role==='Employee'?'/profile':user.role==='Supervisor'?'/my-kpis':'/dashboard')).catch(()=>setRoute('/login'))},[]);return route?<Navigate to={route} replace/>:null}
 export default function App()
 {
     return <Routes>
