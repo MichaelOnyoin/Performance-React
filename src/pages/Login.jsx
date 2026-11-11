@@ -1,6 +1,6 @@
-import{useState}from'react';
-import{useNavigate}from'react-router-dom';
-import{login}from'../api';
+import { useState } from'react';
+import { useNavigate } from'react-router-dom';
+import { login } from'../api';
 
 export default function Login()
 {
@@ -13,14 +13,21 @@ export default function Login()
         e.preventDefault();
         try
         {
-            const x=await login(email,password);
-            localStorage.setItem('token',x.access_token);
-            const me=await (await fetch(`${import.meta.env.VITE_API_URL||'http://127.0.0.1:8000'}/api/auth/me`,{headers:{Authorization:`Bearer ${x.access_token}`} })).json();
+            const x = await login(email,password);
+            localStorage.setItem('token', x.access_token);
+            const API = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+            const me = await ( 
+                await fetch(`${API}/api/auth/me`,
+                {
+                    headers:{Authorization:`Bearer ${x.access_token}`} 
+                }
+            )).json();
             nav(me.role==='Employee'?'/profile':me.role==='Supervisor'?'/my-kpis':'/dashboard')
         }catch(e){
             setError(e.message)
         }
-    }return <div className="login">
+    }
+    return <div className="login">
         <form onSubmit={submit}>
             <img className="auth-logo" src="/hlb-jim-roberts.png" alt="HLB Jim Roberts Advisory and Accounting"/>
             <h1>Performance Hub</h1>
