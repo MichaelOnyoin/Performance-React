@@ -1,19 +1,78 @@
-import{useEffect,useState}from'react';
-import{api,downloadFile}from'../api';
-import Status from'../components/Status';
-import ImportEntries from'../components/ImportEntries';
+import { useEffect, useState } from 'react';
+import { api, downloadFile } from '../api';
+import Status from '../components/Status';
+import ImportEntries from '../components/ImportEntries';
 
-const currentMonth=()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`};
+const currentMonth=()=>{
+    const now=new Date();
+    return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`
+};
+
 export default function Entries(){
-    const[month,setMonth]=useState(currentMonth),[employee,setEmployee]=useState(''),[employees,setEmployees]=useState([]),[rows,setRows]=useState([]),[role,setRole]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(false);
-    useEffect(()=>{api('/api/auth/me').then(async user=>{setRole(user.role);if(user.role!=='Employee')setEmployees(await api('/api/employees'))}).catch(e=>setError(e.message))},[]);
-    async function load(){setLoading(true);setError('');try{let query=`?month=${month}`;if(employee)query+=`&employee_id=${employee}`;setRows(await api(`/api/entries${query}`))}catch(e){setError(e.message)}finally{setLoading(false)}}
+    const[month,setMonth]=useState(currentMonth),
+    [employee,setEmployee]=useState(''),
+    [employees,setEmployees]=useState([]),
+    [rows,setRows]=useState([]),
+    [role,setRole]=useState(''),
+    [error,setError]=useState(''),
+    [loading,setLoading]=useState(false);
+
+    useEffect(()=>{
+        api('/api/auth/me')
+        .then(async user=>
+            {
+                setRole(user.role);
+                if(user.role!=='Employee')setEmployees(await api('/api/employees'))
+                }
+        ).catch(e=>setError(e.message))},
+        []);
+
+    async function load()
+    {
+        setLoading(true);
+        setError('');
+        try{
+            let query=`?month=${month}`;
+            if(employee)query+=`&employee_id=${employee}`;
+            setRows(await api(`/api/entries${query}`))
+        }catch(e){setError(e.message)}
+        finally{setLoading(false)}}
+
     useEffect(()=>{if(role)load()},[role,month,employee]);
-    async function saveReviewerEdits(row,actual,employeeComments){setError('');try{const updated=await api(`/api/entries/${row.id}/review-edit`,{method:'PATCH',body:JSON.stringify({actual:actual===''?null:Number(actual),employee_comments:employeeComments||null})});setRows(old=>old.map(item=>item.id===updated.id?{...item,...updated,can_review:item.can_review}:item));return {...updated,can_review:row.can_review}}catch(e){setError(e.message);return null}}
+
+    async function saveReviewerEdits(row,actual,employeeComments){
+        setError('');
+        try{
+            const updated = await api(`/api/entries/${row.id}/review-edit`,
+                {
+                method:'PATCH',
+                body:JSON.stringify({actual:actual===''?null:Number(actual),
+                employee_comments:employeeComments||null})});
+                setRows(old=>old.map(item=>item.id===updated.id?{...item,...updated,can_review:item.can_review}:item));
+                return {...updated,can_review:row.can_review}
+            }catch(e){setError(e.message);
+                return null
+            }
+        }
+    async function saveAdminActual(row,actual){
+        setError('');
+        try{
+            const updated=await api(`/api/admin/entries/${row.id}/actual`,{
+                method:'PATCH',body:JSON.stringify({actual:actual===''?null:Number(actual)})
+            });
+            setRows(old=>old.map(item=>item.id===updated.id?{...item,...updated}:item));
+            return true;
+        }catch(e){setError(e.message);return false}
+    }
     async function review(row,status,comments){
-        setError('');if(status==='Rejected'&&!comments.trim()){setError('Add feedback before rejecting an entry.');return null}
+        setError('');
+        if(status==='Rejected'&&!comments.trim()){
+            setError('Add feedback before rejecting an entry.');
+            return null
+        }
         const feedback=role==='Supervisor'?{supervisor_comments:comments.trim()||null}:{partner_comments:comments.trim()||null};
-        try{const updated=await api(`/api/entries/${row.id}/review`,{method:'PATCH',body:JSON.stringify({status,...feedback})});setRows(old=>old.map(item=>item.id===updated.id?{...item,...updated,can_review:false}:item));return updated}
+        try{
+            const updated = await api(`/api/entries/${row.id}/review`,{method:'PATCH',body:JSON.stringify({status,...feedback})});setRows(old=>old.map(item=>item.id===updated.id?{...item,...updated,can_review:false}:item));return updated}
         catch(e){setError(e.message);return null}
     }
     async function download(row){try{await downloadFile(`/api/entries/${row.id}/context`,row.context_filename||'supporting-document')}catch(e){setError(e.message)}}
@@ -31,22 +90,54 @@ export default function Entries(){
         {error&&<div className="error">{error}</div>}
         {role==='Supervisor'&&<div className="notice">You can review submissions from employees assigned to you. After your approval, each entry moves to the Partner final review queue.</div>}
         {role==='Partner'&&<div className="notice">You can see all employee KPI entries. Only entries approved by a Supervisor are available for your final review.</div>}
-        <div className="panel tablewrap entries-table-wrap"><table className="entries-table"><thead><tr><th>Entry ID</th><th>Employee ID</th><th>Employee name</th><th>KPI ID</th><th>Description</th><th>Target</th><th>Actual</th><th>Score</th><th>Employee comments</th><th>Proof document</th><th>Status</th><th>Supervisor feedback</th><th>Partner feedback</th><th>Review</th>{role==='Admin'&&<th>Action</th>}</tr></thead>
-            <tbody>{loading?<tr><td colSpan={role==='Admin'?15:14}>Loading entries…</td></tr>:rows.map(row=><ReviewRow key={row.id} row={row} role={role} review={review} saveReviewerEdits={saveReviewerEdits} download={download} deleteEntry={deleteEntry}/>)}{!loading&&!rows.length&&<tr><td colSpan={role==='Admin'?15:14}>No KPI entries found for the selected month.</td></tr>}</tbody>
-        </table></div>
+        <div className="panel tablewrap entries-table-wrap">
+            <table className="entries-table">
+                <thead>
+                    <tr><th>Entry ID</th>
+                    <th>Employee ID</th>
+                    <th>Employee name</th>
+                    <th>KPI ID</th>
+                    <th>Description</th>
+                    <th>Target</th>
+                    <th>Actual</th>
+                    <th>Score</th>
+                    <th>Employee comments</th>
+                    <th>Proof document</th>
+                    <th>Status</th>
+                    <th>Supervisor feedback</th>
+                    <th>Partner feedback</th>
+                    <th>Review</th>
+                    {role==='Admin'&&
+                    <th>Action</th>}
+                    </tr>
+                </thead>
+            <tbody>
+                {loading?
+                <tr>
+                    <td colSpan={role==='Admin'?15:14}>Loading entries…</td>
+                </tr>:rows.map(row=><ReviewRow key={row.id} row={row} role={role} review={review} saveReviewerEdits={saveReviewerEdits} saveAdminActual={saveAdminActual} download={download} deleteEntry={deleteEntry}/>)
+                }
+                {
+                 !loading&&!rows.length&&
+                 <tr><td colSpan={role==='Admin'?15:14}>No KPI entries found for the selected month.</td>
+                 </tr>}
+            </tbody>
+        </table>
+        </div>
     </section>
 }
 
-function ReviewRow({row,role,review,saveReviewerEdits,download,deleteEntry}){
+function ReviewRow({row,role,review,saveReviewerEdits,saveAdminActual,download,deleteEntry}){
     const[supervisorComments,setSupervisorComments]=useState(row.supervisor_comments||''),[partnerComments,setPartnerComments]=useState(row.partner_comments||'');
     const[actual,setActual]=useState(row.actual??''),[employeeComments,setEmployeeComments]=useState(row.employee_comments||'');
     const[busy,setBusy]=useState(false),editableForReview=Boolean(row.can_review),reviewComments=role==='Supervisor'?supervisorComments:partnerComments;
     useEffect(()=>{setSupervisorComments(row.supervisor_comments||'');setPartnerComments(row.partner_comments||'');setActual(row.actual??'');setEmployeeComments(row.employee_comments||'')},[row.id,row.status,row.actual,row.employee_comments,row.supervisor_comments,row.partner_comments]);
     async function saveEdits(){setBusy(true);try{return await saveReviewerEdits(row,actual,employeeComments)}finally{setBusy(false)}}
+    async function saveAdminValue(){setBusy(true);try{await saveAdminActual(row,actual)}finally{setBusy(false)}}
     async function decide(status){setBusy(true);try{const edited=await saveReviewerEdits(row,actual,employeeComments);if(edited)await review({...row,...edited},status,reviewComments)}finally{setBusy(false)}}
     return <tr>
         <td>{row.id}</td><td>{row.employee_id}</td><td>{row.employee_name||'—'}</td><td>{row.kpi_id}</td><td className="entry-description">{row.kpi_name||'—'}</td><td>{row.target??'—'}</td>
-        <td>{editableForReview?<input className="review-actual-input" type="number" step="any" value={actual} onChange={e=>setActual(e.target.value)}/>:row.actual??'—'}</td>
+        <td>{role==='Admin'?<div className="admin-actual-editor"><input aria-label={`Actual for entry ${row.id}`} className="review-actual-input" type="number" step="any" value={actual} disabled={busy} onChange={e=>setActual(e.target.value)}/><button className="secondary" type="button" disabled={busy||String(row.actual??'')===String(actual??'')} onClick={saveAdminValue}>{busy?'Saving…':'Save'}</button></div>:editableForReview?<input className="review-actual-input" type="number" step="any" value={actual} onChange={e=>setActual(e.target.value)}/>:row.actual??'—'}</td>
         <td>{row.final_score?.toFixed(2)??'—'}</td>
         <td>{editableForReview?<textarea className="review-comment-input" rows="2" value={employeeComments} onChange={e=>setEmployeeComments(e.target.value)} placeholder="Employee comments"/>:row.employee_comments||'—'}</td>
         <td className="entry-document-cell">{row.has_context?<><button className="secondary" type="button" onClick={()=>download(row)}>Download</button><small>{row.context_filename}</small></>:'—'}</td>
